@@ -13,6 +13,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/valyala/fasthttp v1.51.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/text v0.13.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 )
