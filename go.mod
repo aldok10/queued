@@ -10,10 +10,11 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc
+	github.com/samber/lo v1.50.0
 	github.com/spf13/cobra v1.8.1
 	github.com/valyala/fasthttp v1.51.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/text v0.13.0
+	golang.org/x/text v0.22.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -31,7 +32,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
