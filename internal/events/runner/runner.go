@@ -2,7 +2,7 @@ package runner
 
 import "context"
 
-type Runner interface {
+type Runner[T any] interface {
 	Run(ctx context.Context) error
 	RunMainLoop()
 	Hide()
@@ -10,5 +10,5 @@ type Runner interface {
 	Quit()
 
 	// Events
-	Notify(name string, data ...interface{})
+	Notify(name string, data ...T)
 }

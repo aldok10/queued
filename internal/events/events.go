@@ -10,14 +10,14 @@ import (
 
 const contextError = `An invalid context was passed. This method requires the specific context given in the lifecycle hooks.`
 
-type Events interface {
-	On(eventName string, callback func(...interface{})) func()
-	OnMultiple(eventName string, callback func(...interface{}), counter int) func()
-	Once(eventName string, callback func(...interface{})) func()
-	Emit(eventName string, data ...interface{})
+type Events[T any] interface {
+	On(eventName string, callback func(...T)) func()
+	OnMultiple(eventName string, callback func(...T), counter int) func()
+	Once(eventName string, callback func(...T)) func()
+	Emit(eventName string, data ...T)
 	Off(eventName string)
 	OffAll()
-	Notify(sender runner.Runner, name string, data ...interface{})
+	Notify(sender runner.Runner[T], name string, data ...T)
 }
 
 type EnvironmentInfo struct {
@@ -26,7 +26,7 @@ type EnvironmentInfo struct {
 	Arch      string
 }
 
-func getEvents(ctx context.Context) Events {
+func getEvents[T any](ctx context.Context) Events[T] {
 	if ctx == nil {
 		pc, _, _, _ := goruntime.Caller(1)
 		funcName := goruntime.FuncForPC(pc).Name()
@@ -34,7 +34,7 @@ func getEvents(ctx context.Context) Events {
 	}
 	result := ctx.Value("events")
 	if result != nil {
-		return result.(Events)
+		return result.(Events[T])
 	}
 	pc, _, _, _ := goruntime.Caller(1)
 	funcName := goruntime.FuncForPC(pc).Name()
@@ -43,14 +43,14 @@ func getEvents(ctx context.Context) Events {
 }
 
 // EventsOn registers a listener for the given event name. It returns a function to cancel the listener
-func EventsOn(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func() {
-	events := getEvents(ctx)
+func EventsOn[T any](ctx context.Context, eventName string, callback func(optionalData ...T)) func() {
+	events := getEvents[T](ctx)
 	return events.On(eventName, callback)
 }
 
 // EventsOff unregisters a listener for the given event name, optionally multiple listeners can be unregistered via `additionalEventNames`
-func EventsOff(ctx context.Context, eventName string, additionalEventNames ...string) {
-	events := getEvents(ctx)
+func EventsOff[T any](ctx context.Context, eventName string, additionalEventNames ...string) {
+	events := getEvents[T](ctx)
 	events.Off(eventName)
 
 	if len(additionalEventNames) > 0 {
@@ -61,27 +61,27 @@ func EventsOff(ctx context.Context, eventName string, additionalEventNames ...st
 }
 
 // EventsOff unregisters a listener for the given event name, optionally multiple listeners can be unregistered via `additionalEventNames`
-func EventsOffAll(ctx context.Context) {
-	events := getEvents(ctx)
+func EventsOffAll[T any](ctx context.Context) {
+	events := getEvents[T](ctx)
 	events.OffAll()
 }
 
 // EventsOnce registers a listener for the given event name. After the first callback, the
 // listener is deleted. It returns a function to cancel the listener
-func EventsOnce(ctx context.Context, eventName string, callback func(optionalData ...interface{})) func() {
-	events := getEvents(ctx)
+func EventsOnce[T any](ctx context.Context, eventName string, callback func(optionalData ...T)) func() {
+	events := getEvents[T](ctx)
 	return events.Once(eventName, callback)
 }
 
 // EventsOnMultiple registers a listener for the given event name, that may be called a maximum of 'counter' times. It returns a function
 // to cancel the listener
-func EventsOnMultiple(ctx context.Context, eventName string, callback func(optionalData ...interface{}), counter int) func() {
-	events := getEvents(ctx)
+func EventsOnMultiple[T any](ctx context.Context, eventName string, callback func(optionalData ...T), counter int) func() {
+	events := getEvents[T](ctx)
 	return events.OnMultiple(eventName, callback, counter)
 }
 
 // EventsEmit pass through
-func EventsEmit(ctx context.Context, eventName string, optionalData ...interface{}) {
-	events := getEvents(ctx)
+func EventsEmit[T any](ctx context.Context, eventName string, optionalData ...T) {
+	events := getEvents[T](ctx)
 	events.Emit(eventName, optionalData...)
 }

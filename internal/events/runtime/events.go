@@ -15,23 +15,23 @@ type Logger interface {
 // the event listened for is emitted. It has a counter which indicates
 // how the total number of events it is interested in. A value of zero
 // means it does not expire (default).
-type eventListener struct {
-	callback func(...interface{}) // Function to call with emitted event data
-	counter  int                  // The number of times this callback may be called. -1 = infinite
-	delete   bool                 // Flag to indicate that this listener should be deleted
+type eventListener[T any] struct {
+	callback func(...T) // Function to call with emitted event data
+	counter  int        // The number of times this callback may be called. -1 = infinite
+	delete   bool       // Flag to indicate that this listener should be deleted
 }
 
 // Events handles eventing
-type Events struct {
+type Events[T any] struct {
 	log Logger
-	run []runner.Runner
+	run []runner.Runner[T]
 
 	// Go event listeners
-	listeners  map[string][]*eventListener
+	listeners  map[string][]*eventListener[T]
 	notifyLock sync.RWMutex
 }
 
-func (e *Events) Notify(sender runner.Runner, name string, data ...interface{}) {
+func (e *Events[T]) Notify(sender runner.Runner[T], name string, data ...T) {
 	e.notifyBackend(name, data...)
 	for _, thisRun := range e.run {
 		if thisRun == sender {
@@ -41,30 +41,30 @@ func (e *Events) Notify(sender runner.Runner, name string, data ...interface{}) 
 	}
 }
 
-func (e *Events) On(eventName string, callback func(...interface{})) func() {
+func (e *Events[T]) On(eventName string, callback func(...T)) func() {
 	return e.registerListener(eventName, callback, -1)
 }
 
-func (e *Events) OnMultiple(eventName string, callback func(...interface{}), counter int) func() {
+func (e *Events[T]) OnMultiple(eventName string, callback func(...T), counter int) func() {
 	return e.registerListener(eventName, callback, counter)
 }
 
-func (e *Events) Once(eventName string, callback func(...interface{})) func() {
+func (e *Events[T]) Once(eventName string, callback func(...T)) func() {
 	return e.registerListener(eventName, callback, 1)
 }
 
-func (e *Events) Emit(eventName string, data ...interface{}) {
+func (e *Events[T]) Emit(eventName string, data ...T) {
 	e.notifyBackend(eventName, data...)
 	for _, thisRun := range e.run {
 		thisRun.Notify(eventName, data...)
 	}
 }
 
-func (e *Events) Off(eventName string) {
+func (e *Events[T]) Off(eventName string) {
 	e.unRegisterListener(eventName)
 }
 
-func (e *Events) OffAll() {
+func (e *Events[T]) OffAll() {
 	e.notifyLock.Lock()
 	for eventName := range e.listeners {
 		delete(e.listeners, eventName)
@@ -73,18 +73,18 @@ func (e *Events) OffAll() {
 }
 
 // NewEvents creates a new log subsystem
-func NewEvents(log Logger) *Events {
-	result := &Events{
+func NewEvents[T any](log Logger) *Events[T] {
+	result := &Events[T]{
 		log:       log,
-		listeners: make(map[string][]*eventListener),
+		listeners: make(map[string][]*eventListener[T]),
 	}
 	return result
 }
 
 // registerListener provides a means of subscribing to events of type "eventName"
-func (e *Events) registerListener(eventName string, callback func(...interface{}), counter int) func() {
+func (e *Events[T]) registerListener(eventName string, callback func(...T), counter int) func() {
 	// Create new eventListener
-	thisListener := &eventListener{
+	thisListener := &eventListener[T]{
 		callback: callback,
 		counter:  counter,
 		delete:   false,
@@ -100,14 +100,14 @@ func (e *Events) registerListener(eventName string, callback func(...interface{}
 		if _, ok := e.listeners[eventName]; !ok {
 			return
 		}
-		e.listeners[eventName] = lo.Filter(e.listeners[eventName], func(l *eventListener, i int) bool {
+		e.listeners[eventName] = lo.Filter(e.listeners[eventName], func(l *eventListener[T], i int) bool {
 			return l != thisListener
 		})
 	}
 }
 
 // unRegisterListener provides a means of unsubscribing to events of type "eventName"
-func (e *Events) unRegisterListener(eventName string) {
+func (e *Events[T]) unRegisterListener(eventName string) {
 	e.notifyLock.Lock()
 	// Clear the listeners
 	delete(e.listeners, eventName)
@@ -115,7 +115,7 @@ func (e *Events) unRegisterListener(eventName string) {
 }
 
 // Notify backend for the given event name
-func (e *Events) notifyBackend(eventName string, data ...interface{}) {
+func (e *Events[T]) notifyBackend(eventName string, data ...T) {
 	e.notifyLock.Lock()
 	defer e.notifyLock.Unlock()
 
@@ -146,7 +146,7 @@ func (e *Events) notifyBackend(eventName string, data ...interface{}) {
 	if itemsToDelete {
 
 		// Create a new Listeners slice
-		var newListeners []*eventListener
+		var newListeners []*eventListener[T]
 
 		// Iterate over current listeners
 		for _, listener := range listeners {
@@ -165,6 +165,6 @@ func (e *Events) notifyBackend(eventName string, data ...interface{}) {
 	}
 }
 
-func (e *Events) Addrun(apprun runner.Runner) {
+func (e *Events[T]) Addrun(apprun runner.Runner[T]) {
 	e.run = append(e.run, apprun)
 }

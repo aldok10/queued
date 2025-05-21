@@ -21,7 +21,7 @@ func Test_EventsOn(t *testing.T) {
 	l := &mockLogger{}
 
 	assert := general.NewAssert(t, "EventsOn")
-	manager := runtime.NewEvents(l)
+	manager := runtime.NewEvents[string](l)
 
 	// Test On
 	eventName := "test"
@@ -30,7 +30,7 @@ func Test_EventsOn(t *testing.T) {
 
 	wg.Add(1)
 
-	manager.On(eventName, func(args ...interface{}) {
+	manager.On(eventName, func(args ...string) {
 		// This is called in a goroutine
 		counter++
 
